@@ -1,0 +1,74 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: votes
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+      - ./healthchecks:/healthchecks:ro
+    healthcheck:
+      test: ["CMD", "sh", "-c", "/healthchecks/postgres.sh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "/healthchecks/redis.sh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./healthchecks:/healthchecks:ro
+
+  vote-app:
+    image: vote-app:latest
+    build:
+      context: ./vote
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  result-app:
+    image: result-app:latest
+    build:
+      context: ./result
+    ports:
+      - "8081:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    image: worker:latest
+    build:
+      context: ./worker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  seed-data:
+    image: seed-data:latest
+    build:
+      context: ./seed-data
+    entrypoint: ["sh", "generate-votes.sh"]
+    depends_on:
+      db:
+        condition: service_healthy

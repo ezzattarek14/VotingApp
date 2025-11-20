@@ -1,0 +1,9 @@
+global:
+  storageClass: gp2
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: gp2
+    size: 8Gi
+  postgresqlPassword: "postgres"
