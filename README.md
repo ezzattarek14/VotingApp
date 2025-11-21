@@ -60,7 +60,7 @@ This system implements **enterprise DevOps standards**, including non-root conta
 ├── infra/terraform/
 ├── k8s/
 ├── helm/voting-system/
-├── monitoring/
+├── prom&graphana/
 │ ├── prometheus/
 │ ├── grafana/
 │ └── node-exporter/
