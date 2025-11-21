@@ -1,4 +1,4 @@
-Voting Application – Production Deployment (Kubernetes + Terraform + CI/CD)
+🗳️ Voting Application – Production Deployment (Kubernetes + Terraform + CI/CD)
 
 A fully-containerized, production-ready microservices system consisting of:
 
@@ -22,7 +22,7 @@ CI/CD Pipeline (GitHub Actions) with Trivy, Docker Hub, and automated deploy
 
 This repository demonstrates production-grade DevOps practices, including multi-stage Dockerfiles, non-root containers, pod security standards, network isolation, Helm packaging, and observability.
 
-  Features
+📌 Features
 Application Architecture
 
 ✔ Microservices: vote, worker, result, redis, postgres
@@ -57,7 +57,7 @@ CI/CD Pipeline (GitHub Actions)
 ✔ Deploy to Kubernetes using manifests/Helm
 ✔ Optional: smoke testing stage
 
-  Repository Structure
+📦 Repository Structure
 .
 ├── vote/
 ├── result/
@@ -73,7 +73,7 @@ CI/CD Pipeline (GitHub Actions)
 ├── .github/workflows/      # CI/CD pipeline
 └── README.md
 
-  1. Setup & Deployment Instructions
+🚀 1. Setup & Deployment Instructions
 Prerequisites
 
 AWS account + IAM user
@@ -189,7 +189,7 @@ push:
   branches: [ main ]
 pull_request:
 
-  2. Design Decisions & Trade-offs
+🧠 2. Design Decisions & Trade-offs
 Microservices over monolith
 
 ✔ Easy scaling
@@ -234,7 +234,7 @@ GitHub Actions for CI/CD
 ✔ Integrated security scanning (Trivy)
 ✖ Requires secrets handling & GitHub environment setup
 
-  Monitoring & Alerting
+📊 Monitoring & Alerting
 
 Prometheus scrapes:
 
@@ -254,7 +254,7 @@ Redis + PostgreSQL (optional exporters)
 
 AlertManager (optional addition)
 
-  Security
+🔐 Security
 
 All containers run as:
 
@@ -278,12 +278,12 @@ Trivy filesystem scan
 
 Trivy image scan
 
-  Contact & Social
+🌐 Contact & Social
 
 👨‍💻 Developed by: Ezzat Tarek
 🔗 LinkedIn:
 https://www.linkedin.com/in/ezzat-tarek-23b27324a
 
-  License
+📄 License
 
 MIT License – free to use, modify, and distribute.
