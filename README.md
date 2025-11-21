@@ -1,164 +1,289 @@
-# DevOps Voting App Project
+Voting Application – Production Deployment (Kubernetes + Terraform + CI/CD)
 
-## Overview
-This project demonstrates a full DevOps workflow for a microservices-based voting application. It covers containerization, Kubernetes deployment, infrastructure provisioning with Terraform, Helm charts for databases, and CI/CD automation.
+A fully-containerized, production-ready microservices system consisting of:
 
-The project is divided into three main phases:
+Vote Service – Frontend for casting votes
 
-1. **Containerization & Local Setup**
-2. **Infrastructure & Deployment**
-3. **Automation, Security & Observability**
+Result Service – Displays aggregated results
 
----
+Worker Service – Background processor (Redis → PostgreSQL)
 
-## Phase 1 – Containerization & Local Setup
+Redis – Queue
 
-### Services
-- `vote` – Frontend service (port 8080)
-- `result` – Frontend service (port 8081)
-- `worker` – Background job processor
-- `redis` – Caching service
-- `postgres` – Relational database
-- Optional `seed-data` – Pre-populates test votes
+PostgreSQL – Persistent database
 
-### Docker Setup
-- Each service has a **Dockerfile** configured for non-root execution.
-- Efficient, minimal images used to reduce footprint.
-- Docker Compose orchestrates services with two-tier networking:
-  - Frontend tier: `vote` + `result`
-  - Backend tier: `worker` + `redis` + `postgres`
-- Health checks implemented for `redis` and `postgres`.
-- Local deployment:
-  ```bash
-  docker compose up
-All services communicate successfully and are healthy.
+Seed Service – Seeds initial data
 
+Prometheus, Grafana, Node Exporter – Full monitoring stack
 
-Phase 2 – Infrastructure & Deployment
-Cluster Provisioning
-AWS EKS cluster provisioned with Terraform (can be adapted to AKS, minikube, k3s, or microk8s).
+EKS Cluster (AWS) deployed with Terraform
 
-Multi-environment support using variables and Terraform workspaces.
+CI/CD Pipeline (GitHub Actions) with Trivy, Docker Hub, and automated deploy
 
-Networking configured with security groups and VPC settings.
+This repository demonstrates production-grade DevOps practices, including multi-stage Dockerfiles, non-root containers, pod security standards, network isolation, Helm packaging, and observability.
 
-Ingress controller deployed via Helm (ingress-nginx).
+  Features
+Application Architecture
 
-Kubernetes Deployment
-Services deployed using Kubernetes manifests and Helm charts:
+✔ Microservices: vote, worker, result, redis, postgres
+✔ Multi-stage Docker images for every service
+✔ Seed image for initializing DB
+✔ Resource requests/limits + liveness/readiness/startup probes
+✔ ConfigMaps + Secrets (base64 + Kubernetes best practices)
+✔ Pod Security Standards (restricted / non-root)
+✔ NetworkPolicies isolating database & Redis
+✔ Optional: Fully templated Helm chart for production deployments
 
-vote-app.yaml, result-app.yaml, worker.yaml, secrets.yaml, configmap.yaml, networkpolicy.yaml, namespace.yaml, ingress.yaml
+Infrastructure (Terraform)
 
-Databases deployed via Helm (bitnami/postgresql, bitnami/redis) with:
+✔ Fully managed EKS cluster
+✔ Worker nodes (scalable)
+✔ IAM roles for service accounts (IRSA)
+✔ VPC, Subnets, Routing, Security Groups
+✔ Autoscaling enabled
 
-Persistence enabled
+Monitoring & Observability
 
-Restricted access
+✔ Prometheus (scrape configs, service monitors)
+✔ Grafana dashboards
+✔ Node Exporter (DaemonSet)
 
-Security and best practices:
+CI/CD Pipeline (GitHub Actions)
 
-Non-root policies enforced (Pod Security Admission)
+✔ Build multi-stage Docker images
+✔ Run tests
+✔ Trivy vulnerability scanning
+✔ Push images to Docker Hub
+✔ Deploy to Kubernetes using manifests/Helm
+✔ Optional: smoke testing stage
 
-NetworkPolicies isolate database pods
-
-ConfigMaps and Secrets used for configuration and sensitive data
-
-Resource limits and probes configured
-
-Deployment Commands
-
-terraform init
-terraform apply
-
-Phase 3 – Automation, Security & Observability
-CI/CD Pipeline
-Built using GitHub Actions:
-
-Docker image build & push
-
-Test execution
-
-Security scans with Trivy
-
-Automated deployment to Kubernetes
-
-(Optional) Smoke tests for endpoints
-
-(Optional) Infrastructure automation workflow
-
-Monitoring
-Prometheus and Grafana for metrics collection and visualization.
-
-Security
-IAM roles for EKS & Helm access
-
-RBAC and PSA policies enforced
-
-NetworkPolicies restrict internal traffic
-
-SAST/DAST integrated into CI pipeline
-
-
-Project Structure
-arduino
-Copy code
-├── terraform/
-│   ├── main.tf
-│   ├── eks.tf
-│   ├── vpc.tf
-│   ├── iam.tf
-│   ├── providers.tf
-│   ├── kubectl.tf
-│   └── variables.tf
-├── k8s/
-│   ├── configmap.yaml
-│   ├── ingress.yaml
-│   ├── namespace.yaml
-│   ├── networkpolicy.yaml
-│   ├── result-app.yaml
-│   ├── secrets.yaml
-│   ├── vote-app.yaml
-│   └── worker.yaml
-├── docker/
-│   ├── Dockerfile.vote
-│   ├── Dockerfile.result
-│   ├── Dockerfile.worker
-│   └── docker-compose.yaml
-├── .github/workflows/
-│   └── ci-cd.yaml
+  Repository Structure
+.
+├── vote/
+├── result/
+├── worker/
+├── seed/
+├── infra/terraform/        # EKS provisioning
+├── k8s/                    # Manifest-based deployment
+├── helm/voting-system/     # Production Helm chart
+├── monitoring/
+│   ├── prometheus/
+│   ├── grafana/
+│   └── node-exporter/
+├── .github/workflows/      # CI/CD pipeline
 └── README.md
-Design Decisions & Trade-offs
-Local vs Cloud Cluster: Local Kubernetes (minikube/k3s) was suitable for development; AWS EKS ensures production-grade deployment.
 
-Helm vs Manifests: Databases managed via Helm for persistence, versioning, and simplified upgrades; app services deployed via manifests.
+  1. Setup & Deployment Instructions
+Prerequisites
 
-Security: Non-root policies and NetworkPolicies protect against accidental or malicious access. Secrets managed via Kubernetes Secrets.
+AWS account + IAM user
 
-CI/CD: GitHub Actions chosen for simplicity and cloud integration. Security scanning integrated to catch vulnerabilities early.
+kubectl, helm, awscli
 
-Persistence: Postgres and Redis use EBS-backed storage classes to ensure durability.
+Terraform ≥ 1.0
 
-Deployment Instructions
-Local Setup
+Docker
+
+GitHub Actions configured with:
+
+DOCKERHUB_USERNAME
+
+DOCKERHUB_TOKEN
+
+KUBE_CONFIG_DATA
+
+AWS_ACCESS_KEY_ID
+
+AWS_SECRET_ACCESS_KEY
+
+Step 1 – Build Images Locally (Optional)
+docker build -t vote-app:latest ./vote
+docker build -t result-app:latest ./result
+docker build -t worker-app:latest ./worker
+docker build -t seed-app:latest ./seed
 
 
-cd docker/
-docker compose up
-AWS EKS Deployment
+Each Dockerfile is multi-stage (builder + runtime), non-root, minimized.
 
-
-cd terraform/
+Step 2 – Provision AWS EKS via Terraform
+cd infra/terraform
 terraform init
+terraform plan
 terraform apply
-Ensure your kubeconfig points to the new cluster.
-
-Verify Services
 
 
-kubectl get pods -n voting
-kubectl get svc -n voting
-Access App
+Outputs:
 
-Frontend: http://<ingress-lb-dns>/vote
+kubeconfig
 
-Results: http://<ingress-lb-dns>/result
+node groups
+
+VPC networking
+
+IAM roles (IRSA)
+
+Step 3 – Deploy Dependencies (Redis + PostgreSQL)
+Using Helm
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install postgres bitnami/postgresql --set auth.enablePostgresUser=true ...
+helm install redis bitnami/redis --set auth.enabled=false ...
+
+
+enabled persistence
+
+restricted NetworkPolicy
+
+non-root security rules
+
+Step 4 – Deploy the Voting App
+Option A – Using Manifests
+kubectl apply -f k8s/
+
+Option B – Using Helm (recommended)
+helm install voting-system ./helm/voting-system
+
+
+Includes:
+
+ConfigMaps / Secrets
+
+Deployments
+
+Services
+
+Ingress
+
+NetworkPolicies
+
+PodSecurity (restricted)
+
+HPA (optional)
+
+Step 5 – Deploy Monitoring Stack
+kubectl apply -f monitoring/prometheus
+kubectl apply -f monitoring/grafana
+kubectl apply -f monitoring/node-exporter
+
+
+Node Exporter runs as a DaemonSet on all nodes.
+
+Grafana UI becomes available via LoadBalancer / Ingress.
+
+Step 6 – CI/CD Pipeline (GitHub Actions)
+
+Pipeline includes:
+
+Build Docker images
+
+Run tests
+
+Trivy scan (FS + image mode)
+
+Push to Docker Hub
+
+Deploy automatically to EKS
+
+Triggered on:
+
+push:
+  branches: [ main ]
+pull_request:
+
+  2. Design Decisions & Trade-offs
+Microservices over monolith
+
+✔ Easy scaling
+✔ Independent deployments
+✖ More complexity in networking + monitoring
+
+Multi-stage Docker builds
+
+✔ Reduced image size
+✔ Faster CI/CD
+✔ Secure (non-root)
+✖ More complex Dockerfiles
+
+Terraform for cluster provisioning
+
+✔ Infrastructure-as-Code repeatability
+✔ Environment parity
+✖ Initial learning curve is high
+
+Helm charts instead of raw manifests
+
+✔ Reusable
+✔ Parameterized
+✔ Production values support
+✖ Requires more initial setup compared to plain YAML
+
+NetworkPolicies & PSA (restricted)
+
+✔ Strong isolation
+✔ Zero trust networking
+✖ Can break communication if misconfigured
+
+Prometheus + Grafana
+
+✔ Enterprise-grade observability
+✔ Extensible dashboards
+✖ Requires storage + configuration effort
+
+GitHub Actions for CI/CD
+
+✔ Simple, cloud-native
+✔ Integrated security scanning (Trivy)
+✖ Requires secrets handling & GitHub environment setup
+
+  Monitoring & Alerting
+
+Prometheus scrapes:
+
+vote / worker / result (custom metrics optional)
+
+Node Exporter
+
+Kubernetes components
+
+Grafana dashboards
+
+Node performance
+
+Pod CPU/memory
+
+Redis + PostgreSQL (optional exporters)
+
+AlertManager (optional addition)
+
+  Security
+
+All containers run as:
+
+non-root
+
+read-only root filesystem
+
+Pod Security Admission (PSA: restricted)
+
+Secrets stored as Kubernetes secret objects
+
+NetworkPolicy isolating:
+
+PostgreSQL from unauthorized pods
+
+Redis queue from non-worker pods
+
+CI/CD includes:
+
+Trivy filesystem scan
+
+Trivy image scan
+
+  Contact & Social
+
+👨‍💻 Developed by: Ezzat Tarek
+🔗 LinkedIn:
+https://www.linkedin.com/in/ezzat-tarek-23b27324a
+
+  License
+
+MIT License – free to use, modify, and distribute.
