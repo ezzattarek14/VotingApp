@@ -66,8 +66,7 @@ This system implements **enterprise DevOps standards**, including non-root conta
 ├── .github/workflows/
 └── README.md
 
-yaml
-Copy code
+
 
 ---
 
@@ -93,8 +92,6 @@ docker build -t result-app:latest ./result
 docker build -t worker-app:latest ./worker
 docker build -t seed-app:latest ./seed
 
-yaml
-Copy code
 
 ---
 
@@ -104,8 +101,6 @@ cd infra/terraform
 terraform init
 terraform apply -auto-approve
 
-yaml
-Copy code
 
 This provisions the full Kubernetes cluster, networking, and IAM roles.
 
@@ -123,8 +118,6 @@ helm install redis bitnami/redis
 --set auth.enabled=false
 --set master.persistence.enabled=true
 
-yaml
-Copy code
 
 Both are deployed with persistence, restricted access, and best security practices.
 
@@ -136,15 +129,11 @@ Both are deployed with persistence, restricted access, and best security practic
 
 kubectl apply -f k8s/
 
-shell
-Copy code
 
 ### **Option B – Using Helm Chart (Recommended)**
 
 helm install voting-system ./helm/voting-system
 
-yaml
-Copy code
 
 This includes Secrets, ConfigMaps, Deployments, Services, Ingress, HPA, PSA, and NetworkPolicies.
 
@@ -156,8 +145,6 @@ kubectl apply -f monitoring/prometheus/
 kubectl apply -f monitoring/grafana/
 kubectl apply -f monitoring/node-exporter/
 
-yaml
-Copy code
 
 Prometheus scrapes all services & nodes; Grafana provides dashboards; Node Exporter runs as a DaemonSet.
 
@@ -180,8 +167,6 @@ push:
 branches: [main]
 pull_request:
 
-yaml
-Copy code
 
 ---
 
@@ -242,7 +227,5 @@ https://www.linkedin.com/in/ezzat-tarek-23b27324a
 
 ---
 
-# **📄 License**
 
-MIT License
 
