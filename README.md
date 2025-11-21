@@ -1,289 +1,248 @@
-🗳️ Voting Application – Production Deployment (Kubernetes + Terraform + CI/CD)
+# **🗳️ Voting Application – Production Deployment (Kubernetes + Terraform + CI/CD)**
 
-A fully-containerized, production-ready microservices system consisting of:
+A fully production-grade microservices application consisting of:
 
-Vote Service – Frontend for casting votes
+- **Vote Service** – Cast votes  
+- **Result Service** – View aggregated results  
+- **Worker Service** – Processes jobs from Redis → PostgreSQL  
+- **Redis** – Queue  
+- **PostgreSQL** – Database  
+- **Seed Service** – Loads initial data  
+- **Prometheus, Grafana, Node Exporter** – Monitoring stack  
+- **AWS EKS** cluster provisioned using Terraform  
+- **GitHub Actions CI/CD** with Trivy scans + Docker Hub pushes  
 
-Result Service – Displays aggregated results
+This system implements **enterprise DevOps standards**, including non-root containers, network isolation, health probes, Helm charts, IaC, and full observability.
 
-Worker Service – Background processor (Redis → PostgreSQL)
+---
 
-Redis – Queue
+# **📌 Features**
 
-PostgreSQL – Persistent database
+## **Application Architecture**
+- Microservices: vote, worker, result, redis, postgres  
+- Multi-stage Docker images  
+- Seed image  
+- ConfigMaps & Secrets  
+- Resource limits & probes  
+- Pod Security Standards (restricted & non-root)  
+- NetworkPolicies isolating database & Redis  
+- Production-grade Helm chart  
 
-Seed Service – Seeds initial data
+## **Infrastructure (Terraform)**
+- AWS EKS  
+- Node groups  
+- IRSA  
+- VPC, subnets, routing  
+- Autoscaling  
 
-Prometheus, Grafana, Node Exporter – Full monitoring stack
+## **Monitoring & Observability**
+- Prometheus  
+- Grafana  
+- Node Exporter  
 
-EKS Cluster (AWS) deployed with Terraform
+## **CI/CD Pipeline**
+- Builds Docker images  
+- Runs tests  
+- Trivy vulnerability scanning  
+- Pushes to Docker Hub  
+- Deploys automatically to Kubernetes  
 
-CI/CD Pipeline (GitHub Actions) with Trivy, Docker Hub, and automated deploy
+---
 
-This repository demonstrates production-grade DevOps practices, including multi-stage Dockerfiles, non-root containers, pod security standards, network isolation, Helm packaging, and observability.
+# **📦 Repository Structure**
 
-📌 Features
-Application Architecture
-
-✔ Microservices: vote, worker, result, redis, postgres
-✔ Multi-stage Docker images for every service
-✔ Seed image for initializing DB
-✔ Resource requests/limits + liveness/readiness/startup probes
-✔ ConfigMaps + Secrets (base64 + Kubernetes best practices)
-✔ Pod Security Standards (restricted / non-root)
-✔ NetworkPolicies isolating database & Redis
-✔ Optional: Fully templated Helm chart for production deployments
-
-Infrastructure (Terraform)
-
-✔ Fully managed EKS cluster
-✔ Worker nodes (scalable)
-✔ IAM roles for service accounts (IRSA)
-✔ VPC, Subnets, Routing, Security Groups
-✔ Autoscaling enabled
-
-Monitoring & Observability
-
-✔ Prometheus (scrape configs, service monitors)
-✔ Grafana dashboards
-✔ Node Exporter (DaemonSet)
-
-CI/CD Pipeline (GitHub Actions)
-
-✔ Build multi-stage Docker images
-✔ Run tests
-✔ Trivy vulnerability scanning
-✔ Push images to Docker Hub
-✔ Deploy to Kubernetes using manifests/Helm
-✔ Optional: smoke testing stage
-
-📦 Repository Structure
 .
 ├── vote/
 ├── result/
 ├── worker/
 ├── seed/
-├── infra/terraform/        # EKS provisioning
-├── k8s/                    # Manifest-based deployment
-├── helm/voting-system/     # Production Helm chart
+├── infra/terraform/
+├── k8s/
+├── helm/voting-system/
 ├── monitoring/
-│   ├── prometheus/
-│   ├── grafana/
-│   └── node-exporter/
-├── .github/workflows/      # CI/CD pipeline
+│ ├── prometheus/
+│ ├── grafana/
+│ └── node-exporter/
+├── .github/workflows/
 └── README.md
 
-🚀 1. Setup & Deployment Instructions
-Prerequisites
+yaml
+Copy code
 
-AWS account + IAM user
+---
 
-kubectl, helm, awscli
+# **🚀 1. Setup & Deployment Instructions**
 
-Terraform ≥ 1.0
+## **Prerequisites**
+- AWS account + IAM user  
+- kubectl, helm, terraform  
+- Docker  
+- GitHub Secrets configured:
+  - `DOCKERHUB_USERNAME`  
+  - `DOCKERHUB_TOKEN`  
+  - `KUBE_CONFIG_DATA`  
+  - `AWS_ACCESS_KEY_ID`  
+  - `AWS_SECRET_ACCESS_KEY`  
 
-Docker
+---
 
-GitHub Actions configured with:
+## **Step 1 – Build Docker Images (Optional)**
 
-DOCKERHUB_USERNAME
-
-DOCKERHUB_TOKEN
-
-KUBE_CONFIG_DATA
-
-AWS_ACCESS_KEY_ID
-
-AWS_SECRET_ACCESS_KEY
-
-Step 1 – Build Images Locally (Optional)
 docker build -t vote-app:latest ./vote
 docker build -t result-app:latest ./result
 docker build -t worker-app:latest ./worker
 docker build -t seed-app:latest ./seed
 
+yaml
+Copy code
 
-Each Dockerfile is multi-stage (builder + runtime), non-root, minimized.
+---
 
-Step 2 – Provision AWS EKS via Terraform
+## **Step 2 – Provision AWS EKS (Terraform)**
+
 cd infra/terraform
 terraform init
-terraform plan
-terraform apply
+terraform apply -auto-approve
 
+yaml
+Copy code
 
-Outputs:
+This provisions the full Kubernetes cluster, networking, and IAM roles.
 
-kubeconfig
+---
 
-node groups
+## **Step 3 – Deploy Redis & PostgreSQL via Helm**
 
-VPC networking
-
-IAM roles (IRSA)
-
-Step 3 – Deploy Dependencies (Redis + PostgreSQL)
-Using Helm
 helm repo add bitnami https://charts.bitnami.com/bitnami
-helm install postgres bitnami/postgresql --set auth.enablePostgresUser=true ...
-helm install redis bitnami/redis --set auth.enabled=false ...
 
+helm install postgres bitnami/postgresql
+--set auth.enablePostgresUser=true
+--set primary.persistence.enabled=true
 
-enabled persistence
+helm install redis bitnami/redis
+--set auth.enabled=false
+--set master.persistence.enabled=true
 
-restricted NetworkPolicy
+yaml
+Copy code
 
-non-root security rules
+Both are deployed with persistence, restricted access, and best security practices.
 
-Step 4 – Deploy the Voting App
-Option A – Using Manifests
+---
+
+## **Step 4 – Deploy the Voting Application**
+
+### **Option A – Using Kubernetes Manifests**
+
 kubectl apply -f k8s/
 
-Option B – Using Helm (recommended)
+shell
+Copy code
+
+### **Option B – Using Helm Chart (Recommended)**
+
 helm install voting-system ./helm/voting-system
 
+yaml
+Copy code
 
-Includes:
+This includes Secrets, ConfigMaps, Deployments, Services, Ingress, HPA, PSA, and NetworkPolicies.
 
-ConfigMaps / Secrets
+---
 
-Deployments
+## **Step 5 – Deploy Monitoring Stack**
 
-Services
+kubectl apply -f monitoring/prometheus/
+kubectl apply -f monitoring/grafana/
+kubectl apply -f monitoring/node-exporter/
 
-Ingress
+yaml
+Copy code
 
-NetworkPolicies
+Prometheus scrapes all services & nodes; Grafana provides dashboards; Node Exporter runs as a DaemonSet.
 
-PodSecurity (restricted)
+---
 
-HPA (optional)
+## **Step 6 – CI/CD Pipeline (GitHub Actions)**
 
-Step 5 – Deploy Monitoring Stack
-kubectl apply -f monitoring/prometheus
-kubectl apply -f monitoring/grafana
-kubectl apply -f monitoring/node-exporter
+Pipeline stages:
 
-
-Node Exporter runs as a DaemonSet on all nodes.
-
-Grafana UI becomes available via LoadBalancer / Ingress.
-
-Step 6 – CI/CD Pipeline (GitHub Actions)
-
-Pipeline includes:
-
-Build Docker images
-
-Run tests
-
-Trivy scan (FS + image mode)
-
-Push to Docker Hub
-
-Deploy automatically to EKS
+- Build images  
+- Run tests  
+- Trivy filesystem scan  
+- Trivy image scan  
+- Push images to Docker Hub  
+- Deploy to EKS  
 
 Triggered on:
 
 push:
-  branches: [ main ]
+branches: [main]
 pull_request:
 
-🧠 2. Design Decisions & Trade-offs
-Microservices over monolith
+yaml
+Copy code
 
-✔ Easy scaling
-✔ Independent deployments
-✖ More complexity in networking + monitoring
+---
 
-Multi-stage Docker builds
+# **🧠 2. Design Decisions & Trade-Offs**
 
-✔ Reduced image size
-✔ Faster CI/CD
-✔ Secure (non-root)
+## **Microservices vs Monolith**
+✔ Better scalability & separation  
+✖ More complexity in networking
+
+## **Multi-stage Docker Builds**
+✔ Smaller, secure images  
 ✖ More complex Dockerfiles
 
-Terraform for cluster provisioning
+## **Terraform IaC**
+✔ Reproducible & scalable infra  
+✖ Requires experience to manage
 
-✔ Infrastructure-as-Code repeatability
-✔ Environment parity
-✖ Initial learning curve is high
+## **Helm Charts**
+✔ Reusable & configurable  
+✖ Requires templating knowledge
 
-Helm charts instead of raw manifests
+## **NetworkPolicies & Pod Security**
+✔ Strong isolation & zero trust  
+✖ Can break apps if misconfigured
 
-✔ Reusable
-✔ Parameterized
-✔ Production values support
-✖ Requires more initial setup compared to plain YAML
+## **Prometheus/Grafana Monitoring**
+✔ Complete observability  
+✖ Requires storage & setup effort
 
-NetworkPolicies & PSA (restricted)
+## **GitHub Actions**
+✔ Cloud-native pipeline  
+✖ Must manage secrets properly
 
-✔ Strong isolation
-✔ Zero trust networking
-✖ Can break communication if misconfigured
+---
 
-Prometheus + Grafana
+# **📊 Monitoring & Alerting**
+- Prometheus scrapes all services, nodes, and exporters  
+- Grafana dashboards for cluster & app metrics  
+- Optional: AlertManager setup  
 
-✔ Enterprise-grade observability
-✔ Extensible dashboards
-✖ Requires storage + configuration effort
+---
 
-GitHub Actions for CI/CD
+# **🔐 Security**
+- All containers run as **non-root**  
+- Read-only root filesystem  
+- Kubernetes **Pod Security Admission (restricted)**  
+- Secrets stored in Kubernetes Secret objects  
+- NetworkPolicies block unauthorized access to Redis/PostgreSQL  
+- CI/CD performs Trivy vulnerability scanning  
 
-✔ Simple, cloud-native
-✔ Integrated security scanning (Trivy)
-✖ Requires secrets handling & GitHub environment setup
+---
 
-📊 Monitoring & Alerting
+# **🌐 Contact**
 
-Prometheus scrapes:
+👨‍💻 **Developed By:** *Ezzat Tarek*  
+🔗 **LinkedIn:**  
+https://www.linkedin.com/in/ezzat-tarek-23b27324a  
 
-vote / worker / result (custom metrics optional)
+---
 
-Node Exporter
+# **📄 License**
 
-Kubernetes components
+MIT License
 
-Grafana dashboards
-
-Node performance
-
-Pod CPU/memory
-
-Redis + PostgreSQL (optional exporters)
-
-AlertManager (optional addition)
-
-🔐 Security
-
-All containers run as:
-
-non-root
-
-read-only root filesystem
-
-Pod Security Admission (PSA: restricted)
-
-Secrets stored as Kubernetes secret objects
-
-NetworkPolicy isolating:
-
-PostgreSQL from unauthorized pods
-
-Redis queue from non-worker pods
-
-CI/CD includes:
-
-Trivy filesystem scan
-
-Trivy image scan
-
-🌐 Contact & Social
-
-👨‍💻 Developed by: Ezzat Tarek
-🔗 LinkedIn:
-https://www.linkedin.com/in/ezzat-tarek-23b27324a
-
-📄 License
-
-MIT License – free to use, modify, and distribute.
