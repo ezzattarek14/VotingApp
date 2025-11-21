@@ -1,4 +1,5 @@
 # **🗳️ Voting Application – Production Deployment (Kubernetes + Terraform + CI/CD)**
+<img width="860" height="800" alt="image" src="https://github.com/user-attachments/assets/4058374c-db67-450d-9e26-dc195f217c26" />
 
 A fully production-grade microservices application consisting of:
 
